@@ -23,7 +23,7 @@ export default function ChatClient({
   title?: string | null;
   initialMessages?: Msg[];
 }) {
-  const { messages, send, loading, abort } = useChat(
+  const { messages, send, loading, abort, resendLast } = useChat(
     characterId,
     systemPrompt || undefined,
     initialMessages
@@ -100,6 +100,31 @@ export default function ChatClient({
               <div className="mt-1 text-[10px] opacity-70">
                 {new Date(m.ts).toLocaleTimeString()}
               </div>
+              {/* 마지막 사용자 메시지에 재전송 버튼 노출 */}
+              {m.role === "user" &&
+                // 이 사용자 메시지가 마지막 사용자 메시지인지 확인
+                (() => {
+                  let lastUserIdx = -1;
+                  for (let i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i].role === "user") {
+                      lastUserIdx = i;
+                      break;
+                    }
+                  }
+                  return lastUserIdx === idx;
+                })() && (
+                  <div className="mt-1 text-right">
+                    <button
+                      type="button"
+                      disabled={loading}
+                      onClick={() => resendLast()}
+                      className="rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] hover:bg-white/20 disabled:opacity-50"
+                      title="이 메시지로 다시 응답 받기"
+                    >
+                      재전송
+                    </button>
+                  </div>
+                )}
             </div>
           </div>
         ))}

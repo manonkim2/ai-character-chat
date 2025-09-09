@@ -16,19 +16,25 @@ export function useChat(
   const [loading, setLoading] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
 
-  async function send(text: string) {
-    if (text.trim().length === 0) return;
-    if (text.length > 200) throw new Error("200자 제한");
+  function extractTextDelta(evt: any): string {
+    if (typeof evt === "string") return evt;
+    if (typeof evt?.delta === "string") return evt.delta;
+    if (typeof evt?.output_text === "string") return evt.output_text;
+    if (typeof evt?.delta?.text === "string") return evt.delta.text;
+    if (typeof evt?.text === "string") return evt.text;
+    if (Array.isArray(evt?.content) && typeof evt.content[0]?.text === "string")
+      return evt.content[0].text;
+    if (
+      Array.isArray(evt?.delta?.content) &&
+      typeof evt.delta.content[0]?.text === "string"
+    )
+      return evt.delta.content[0].text;
+    if (typeof evt?.delta?.output_text === "string") return evt.delta.output_text;
+    return "";
+  }
 
-    const userMsg: Msg = {
-      role: "user",
-      content: text,
-      ts: Date.now(),
-      characterId,
-    };
-    setMessages((m) => [...m, userMsg]);
+  async function streamFrom(payloadMessages: { role: string; content: string }[]) {
     setLoading(true);
-
     controllerRef.current?.abort();
     controllerRef.current = new AbortController();
 
@@ -39,9 +45,7 @@ export function useChat(
       body: JSON.stringify({
         characterId,
         system: systemPrompt,
-        messages: messages
-          .concat(userMsg)
-          .map(({ role, content }) => ({ role, content })),
+        messages: payloadMessages,
       }),
     });
 
@@ -50,10 +54,8 @@ export function useChat(
       throw new Error("API 오류");
     }
 
-    // SSE 수신
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-
     let partial = "";
 
     const ai: Msg = {
@@ -62,7 +64,6 @@ export function useChat(
       ts: Date.now(),
       characterId,
     };
-
     setMessages((m) => [...m, ai]);
 
     while (true) {
@@ -78,40 +79,7 @@ export function useChat(
         if (!json || json === "[DONE]") continue;
         try {
           const evt = JSON.parse(json);
-
-          let textDelta = "";
-          if (typeof evt === "string") {
-            textDelta = evt;
-          }
-          if (!textDelta && typeof evt?.delta === "string") {
-            textDelta = evt.delta;
-          }
-          if (!textDelta && typeof evt?.output_text === "string") {
-            textDelta = evt.output_text;
-          }
-          if (!textDelta && typeof evt?.delta?.text === "string") {
-            textDelta = evt.delta.text;
-          }
-          if (!textDelta && typeof evt?.text === "string") {
-            textDelta = evt.text;
-          }
-          if (
-            !textDelta &&
-            Array.isArray(evt?.content) &&
-            typeof evt.content[0]?.text === "string"
-          ) {
-            textDelta = evt.content[0].text;
-          }
-          if (
-            !textDelta &&
-            Array.isArray(evt?.delta?.content) &&
-            typeof evt.delta.content[0]?.text === "string"
-          ) {
-            textDelta = evt.delta.content[0].text;
-          }
-          if (!textDelta && typeof evt?.delta?.output_text === "string") {
-            textDelta = evt.delta.output_text;
-          }
+          const textDelta = extractTextDelta(evt);
           if (textDelta) {
             setMessages((m) => {
               const copy = m.slice();
@@ -130,10 +98,43 @@ export function useChat(
     setLoading(false);
   }
 
+  async function send(text: string) {
+    if (text.trim().length === 0) return;
+    if (text.length > 200) throw new Error("200자 제한");
+
+    const userMsg: Msg = {
+      role: "user",
+      content: text,
+      ts: Date.now(),
+      characterId,
+    };
+    const base = messages.concat(userMsg);
+    setMessages((m) => [...m, userMsg]);
+    await streamFrom(base.map(({ role, content }) => ({ role, content })));
+  }
+
   function abort() {
     controllerRef.current?.abort();
     setLoading(false);
   }
 
-  return { messages, send, loading, abort };
+  // 마지막 사용자 메시지를 기준으로 재전송
+  async function resendLast() {
+    if (loading) return;
+    const lastUserIdx = (() => {
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === "user") return i;
+      }
+      return -1;
+    })();
+    if (lastUserIdx < 0) return;
+
+    // 재전송 시도: 대상 사용자 메시지 이후의 응답(어시스턴트)을 제거
+    const base = messages.slice(0, lastUserIdx + 1);
+    setMessages(base);
+
+    await streamFrom(base.map(({ role, content }) => ({ role, content })));
+  }
+
+  return { messages, send, loading, abort, resendLast };
 }
