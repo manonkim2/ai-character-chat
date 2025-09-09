@@ -117,8 +117,12 @@ export const createCharacterFromForm = async (
 
 // 캐릭터 목록 조회
 export const getCharactersAction = async (userId: string) => {
+  // 기본 캐릭터용 가상 ID(`${userId}::default-*`)는 목록에서 제외하여 중복 노출 방지
   const custom = await db.character.findMany({
-    where: { userId },
+    where: {
+      userId,
+      NOT: { id: { startsWith: `${userId}::default-` } },
+    },
     orderBy: { createdAt: "asc" },
   });
   return [...defaultCharacters(userId), ...custom];
@@ -182,4 +186,45 @@ export const saveConversationAction = async (
   ]);
 
   return { ok: true as const, count: messages.length };
+};
+
+// 캐릭터 삭제 (커스텀 캐릭터만 노출, 기본 캐릭터는 내부 저장본만 정리 가능)
+export const deleteCharacterAction = async (id: string) => {
+  const user = await requireUser();
+  const userId = user.id;
+
+  const isDefault = id.startsWith("default-");
+  if (isDefault) {
+    // 기본 캐릭터는 삭제 불가
+    return { ok: false as const, deleted: false, error: "기본 캐릭터는 삭제할 수 없습니다." };
+  }
+  const storageId = storageIdFor(userId, id);
+
+  // 썸네일 삭제를 위해 우선 캐릭터 조회 (있을 수도 있고 없을 수도 있음)
+  const existing = await db.character.findFirst({
+    where: { id: storageId, userId },
+  });
+
+  // 메시지 먼저 정리
+  await db.message.deleteMany({ where: { userId, characterId: storageId } });
+
+  // 캐릭터 레코드 삭제 (기본 캐릭터의 경우 존재하지 않을 수 있음)
+  if (existing) {
+    // Supabase 썸네일 정리 시도 (public URL -> objectPath 추출)
+    try {
+      if (existing.thumbnail) {
+        const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+        const prefix = `${baseUrl}/storage/v1/object/public/thumbnails/`;
+        if (baseUrl && existing.thumbnail.startsWith(prefix)) {
+          const objectPath = existing.thumbnail.slice(prefix.length);
+          const supabase = await createSupabaseServerClient();
+          await supabase.storage.from("thumbnails").remove([objectPath]);
+        }
+      }
+    } catch {}
+
+    await db.character.delete({ where: { id: storageId } });
+  }
+
+  return { ok: true as const, deleted: true };
 };

@@ -38,8 +38,8 @@ export default function ChatClient({
   }, [messages, loading]);
 
   return (
-    <div className="flex h-full flex-col rounded-lg border bg-bgSecondary p-0">
-      <header className="sticky top-0 z-10 border-b bg-bgSecondary/80 backdrop-blur-md">
+    <div className="flex h-full flex-col rounded-lg border dark:border-none bg-bgSecondary p-0">
+      <header className="sticky top-0 z-10 border-b bg-bgSecondary/80 backdrop-blur-md dark:border-gray-500">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-fontPrimary">
@@ -111,7 +111,7 @@ export default function ChatClient({
       </div>
 
       <form
-        className="border-t px-4 py-3"
+        className="border-t px-4 py-3 dark:border-gray-500"
         onSubmit={async (e) => {
           e.preventDefault();
           if (!text.trim()) return;
@@ -130,7 +130,7 @@ export default function ChatClient({
               value={text}
               onChange={(e) => setText(e.target.value.slice(0, 200))}
               placeholder="메시지를 입력하세요 (최대 200자)"
-              className="w-full h-full resize-none rounded-lg border border-white/10 bg-white/50 p-md text-sm text-fontPrimary outline-none ring-0 placeholder:text-fontSecondary/60 focus:border-white/20 dark:bg-bgPrimary/80 "
+              className="w-full h-full resize-none rounded-lg border border-white/10 bg-white/50 p-md text-sm text-fontPrimary outline-none ring-0 placeholder:text-fontSecondary/60 focus:border-white/20 dark:bg-bgPrimary/80"
               rows={3}
             />
             <div className="pointer-events-none absolute bottom-2 right-2 select-none rounded-md bg-black/40 px-2 py-0.5 text-[10px] text-white dark:bg-black/30">

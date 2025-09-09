@@ -138,9 +138,9 @@ export default function CreateCharacterModal() {
             onClick={() => handleClose()}
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
           />
-          <div className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-lg max-h-[90dvh] overflow-auto">
+          <div className="relative z-10 w-full max-w-lg rounded-lg bg-white p-6 shadow-lg max-h-[90dvh] overflow-auto text-gray-800">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">새 캐릭터 생성</h2>
+              <h2 className="text-lg font-semibold ">새 캐릭터 생성</h2>
               <button
                 type="button"
                 onClick={() => handleClose()}
