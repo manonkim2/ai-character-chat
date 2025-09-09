@@ -38,64 +38,70 @@ export function useChat(
     controllerRef.current?.abort();
     controllerRef.current = new AbortController();
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      signal: controllerRef.current.signal,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        characterId,
-        system: systemPrompt,
-        messages: payloadMessages,
-      }),
-    });
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        signal: controllerRef.current.signal,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          characterId,
+          system: systemPrompt,
+          messages: payloadMessages,
+        }),
+      });
 
-    if (!res.ok || !res.body) {
-      setLoading(false);
-      throw new Error("API 오류");
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let partial = "";
-
-    const ai: Msg = {
-      role: "assistant",
-      content: "",
-      ts: Date.now(),
-      characterId,
-    };
-    setMessages((m) => [...m, ai]);
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      partial += decoder.decode(value, { stream: true });
-
-      const lines = partial.split("\n");
-      partial = lines.pop() ?? "";
-      for (const line of lines) {
-        if (!line.startsWith("data:")) continue;
-        const json = line.slice(5).trim();
-        if (!json || json === "[DONE]") continue;
-        try {
-          const evt = JSON.parse(json);
-          const textDelta = extractTextDelta(evt);
-          if (textDelta) {
-            setMessages((m) => {
-              const copy = m.slice();
-              const lastIdx = copy.length - 1;
-              copy[lastIdx] = {
-                ...copy[lastIdx],
-                content: copy[lastIdx].content + textDelta,
-              };
-              return copy;
-            });
-          }
-        } catch {}
+      if (!res.ok || !res.body) {
+        throw new Error("API 오류");
       }
-    }
 
-    setLoading(false);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let partial = "";
+
+      const ai: Msg = {
+        role: "assistant",
+        content: "",
+        ts: Date.now(),
+        characterId,
+      };
+      setMessages((m) => [...m, ai]);
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        partial += decoder.decode(value, { stream: true });
+
+        const lines = partial.split("\n");
+        partial = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data:")) continue;
+          const json = line.slice(5).trim();
+          if (!json || json === "[DONE]") continue;
+          try {
+            const evt = JSON.parse(json);
+            const textDelta = extractTextDelta(evt);
+            if (textDelta) {
+              setMessages((m) => {
+                const copy = m.slice();
+                const lastIdx = copy.length - 1;
+                copy[lastIdx] = {
+                  ...copy[lastIdx],
+                  content: copy[lastIdx].content + textDelta,
+                };
+                return copy;
+              });
+            }
+          } catch {}
+        }
+      }
+    } catch (e: any) {
+      // AbortError는 무시
+      if (e?.name !== "AbortError") {
+        throw e;
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function send(text: string) {
