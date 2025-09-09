@@ -1,52 +1,48 @@
 export const dynamic = "force-dynamic";
 
-import { redirect } from "next/navigation";
-import { requireUser } from "@/utils/auth/server";
-import { getCharactersAction } from "./actions";
 import Image from "next/image";
 import Link from "next/link";
-import CreateCharacterModal from "./CreateCharacterModal";
 
-// - [x] 기본 제공 캐릭터 3개
-// - [x] 사용자 정의 캐릭터 생성
-// * [x] 캐릭터 이름 설정
-// * [x] 캐릭터 프롬프트 정의
-// * 썸네일 이미지 업로드 (파일 선택)
-// - 캐릭터별 독립적 대화 관리
-// - 캐릭터 선택 UI (썸네일 표시)
+import { requireUser } from "@/utils/auth/server";
+import { getCharactersAction } from "./actions";
+import CreateCharacterModal from "./components/CreateCharacterModal";
 
-export default async function CharactersPage() {
+const CharactersPage = async () => {
   const user = await requireUser();
   const userId = user.id;
   const characters = await getCharactersAction(userId);
 
   return (
-    <div className="p-6">
-      {/* 추후 모달/폼으로 연결 */}
-      <div className="mt-6">
+    <div>
+      <div className="flex justify-between items-center py-md">
+        <h1 className="text-lg font-bold">
+          원하는 캐릭터를 선택하고 이야기를 시작해보세요.
+        </h1>
         <CreateCharacterModal />
       </div>
-      <h1 className="mb-4 text-2xl font-bold">캐릭터 선택</h1>
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-3 gap-xl">
         {characters.map((c) => (
           <Link
             key={c.id}
             href={`/chat/${c.id}`}
-            className="rounded-lg border bg-card p-4 shadow hover:shadow-lg transition"
+            className="border p-lg shadow hover:shadow-lg flex flex-col items-center"
           >
-            <div className="relative h-32 w-32 mx-auto">
-              <Image
-                src={c.thumbnail || "/default_user.png"}
-                alt={c.name}
-                height={80}
-                width={80}
-                className="object-cover rounded-full"
-              />
-            </div>
-            <h2 className="mt-4 text-center font-semibold">{c.name}</h2>
+            <Image
+              src={c.thumbnail || "/default_user.png"}
+              alt={c.name}
+              height={110}
+              width={110}
+              className="rounded-full border"
+            />
+            <h2 className="mt-4 text-center font-semibold text-lg mb-sm">
+              {c.name}
+            </h2>
+            <span className="text-sm text-fontSecondary">{c.prompt}</span>
           </Link>
         ))}
       </div>
     </div>
   );
-}
+};
+
+export default CharactersPage;

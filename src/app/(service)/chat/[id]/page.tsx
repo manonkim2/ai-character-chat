@@ -1,4 +1,3 @@
-import Link from "next/link";
 import ChatClient from "./client";
 import { requireUser } from "@/utils/auth/server";
 import { getCharacterInfo } from "@/utils/characters";
@@ -9,8 +8,8 @@ interface Props {
 }
 
 export default async function ChatPage({ params }: Props) {
-  const user = await requireUser();
   const { id } = await params;
+  const user = await requireUser();
   const info = await getCharacterInfo(user.id, id);
   const initial = await getMessagesAction(user.id, id);
 

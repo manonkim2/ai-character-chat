@@ -3,7 +3,7 @@
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
-const Logout = () => {
+const LogoutButton = () => {
   const supabase = createClient();
   const router = useRouter();
 
@@ -13,15 +13,13 @@ const Logout = () => {
   };
 
   return (
-    <>
-      <button
-        onClick={handleLogout}
-        className="mt-4 rounded bg-gray-800 px-4 py-2 text-white"
-      >
-        로그아웃
-      </button>
-    </>
+    <button
+      onClick={handleLogout}
+      className="rounded px-lg py-sm text-fontPrimary text-sm border"
+    >
+      로그아웃
+    </button>
   );
 };
 
-export default Logout;
+export default LogoutButton;

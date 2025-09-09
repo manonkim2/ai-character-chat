@@ -8,7 +8,7 @@ import {
   useCallback,
   useTransition,
 } from "react";
-import { createCharacterFromForm } from "./actions";
+import { createCharacterFromForm } from "../actions";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
 
@@ -121,7 +121,7 @@ export default function CreateCharacterModal() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded bg-primary px-4 py-2 text-white hover:bg-primary/80"
+        className="rounded bg-primary px-4 h-full py-sm  text-white text-fontPrimary hover:bg-primary/80 text-sm"
       >
         + 새 캐릭터 만들기
       </button>

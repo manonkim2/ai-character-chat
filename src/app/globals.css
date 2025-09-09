@@ -3,26 +3,25 @@
 @tailwind utilities;
 
 :root {
-  /* Brand (sleek violet/indigo) */
-  --brand: 250 95% 60%;         /* hsl(250,95%,60%) */
+  --brand: 217 33% 17%;
   --brand-foreground: 0 0% 100%; /* white */
 
   /* Base (light) */
-  --background: 0 0% 100%;       /* white */
-  --foreground: 222 47% 11%;     /* slate-900-ish */
+  --background: 0 0% 100%; /* white */
+  --foreground: 222 47% 11%; /* slate-900-ish */
   --bg-primary: 0 0% 100%;
-  --bg-secondary: 210 20% 98%;   /* slate-50/100 */
+  --bg-secondary: 210 20% 98%; /* slate-50/100 */
 
   /* Text (light) */
-  --font-primary: 222 47% 11%;   /* dark slate */
+  --font-primary: 222 47% 11%; /* dark slate */
   --font-secondary: 215 19% 35%; /* slate-500 */
-  --font-tertiary: 215 16% 47%;  /* slate-400 */
+  --font-tertiary: 215 16% 47%; /* slate-400 */
 }
 
 .dark {
   /* Base (dark) */
-  --background: 222 47% 7%;      /* very dark */
-  --foreground: 210 40% 98%;     /* near white */
+  --background: 222 47% 7%; /* very dark */
+  --foreground: 210 40% 98%; /* near white */
   --bg-primary: 222 47% 7%;
   --bg-secondary: 222 47% 11%;
 
