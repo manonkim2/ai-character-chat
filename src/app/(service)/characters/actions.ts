@@ -2,9 +2,9 @@
 
 import db from "@/lib/db";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import { requireUser } from "@/utils/auth/server";
 
-// 기본 캐릭터 하드코딩
+// 기본 캐릭터
 const defaultCharacters = (userId: string) => [
   {
     id: "default-1",
@@ -32,24 +32,20 @@ const defaultCharacters = (userId: string) => [
   },
 ];
 
-// 폼 기반 캐릭터 생성 (서버 액션)
-type FormState = { ok?: boolean; error?: string } | undefined;
+type FormState = { ok?: boolean; error?: string; id?: string } | undefined;
+
 export const createCharacterFromForm = async (
   _prevState: FormState,
   formData: FormData
 ) => {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect("/login");
-  }
-
-  const userId = data.user.id;
+  const user = await requireUser();
+  const userId = user.id;
   const name = String(formData.get("name") || "").trim();
   const prompt = String(formData.get("prompt") || "").trim();
   const file = formData.get("thumbnailFile");
-  let thumbnail: string | undefined = undefined;
+  const thumbnailFromUrl = String(formData.get("thumbnailUrl") || "").trim();
+  let thumbnail: string | undefined = thumbnailFromUrl || undefined;
 
   if (!name) {
     return { ok: false, error: "이름을 입력해주세요." } as const;
@@ -59,10 +55,27 @@ export const createCharacterFromForm = async (
   }
 
   try {
-    // 파일 업로드 처리
-    if (file && typeof file !== "string") {
+    // 파일 업로드 처리 (클라이언트 업로드 URL이 없을 때만)
+    if (!thumbnail && file && typeof file !== "string") {
       const f = file as File;
       if (f.size > 0) {
+        // 서버 측 파일 유효성 검사
+        const allowed = ["image/jpeg", "image/png", "image/webp"] as const;
+        const maxSize = 50 * 1024 * 1024; // 50MB
+        if (!allowed.includes(f.type as any)) {
+          return {
+            ok: false,
+            error:
+              "지원하지 않는 이미지 형식입니다. JPG/PNG/WebP만 가능합니다.",
+          } as const;
+        }
+        if (f.size > maxSize) {
+          return {
+            ok: false,
+            error: "파일이 너무 큽니다. 최대 50MB까지 업로드 가능합니다.",
+          } as const;
+        }
+
         const bucket = "thumbnails";
         const ext = f.name?.split(".").pop() || "png";
         const objectPath = `${userId}/${crypto.randomUUID()}.${ext}`;
@@ -80,10 +93,10 @@ export const createCharacterFromForm = async (
           } as const;
         }
 
-        const { data: pub, error: pubErr } = supabase.storage
+        const { data: pub } = supabase.storage
           .from(bucket)
           .getPublicUrl(objectPath);
-        if (pubErr || !pub?.publicUrl) {
+        if (!pub?.publicUrl) {
           return {
             ok: false,
             error: "썸네일 URL 생성에 실패했습니다.",
@@ -96,7 +109,7 @@ export const createCharacterFromForm = async (
     const created = await db.character.create({
       data: { userId, name, prompt, thumbnail },
     });
-    redirect(`/chat/${created.id}`);
+    return { ok: true, id: created.id } as const;
   } catch (e) {
     return { ok: false, error: "캐릭터 생성 중 오류가 발생했습니다." } as const;
   }

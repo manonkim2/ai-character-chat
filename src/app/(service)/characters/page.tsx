@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import { createSupabaseServerClient } from "@/utils/supabase/server";
+import { requireUser } from "@/utils/auth/server";
 import { getCharactersAction } from "./actions";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,18 +16,16 @@ import CreateCharacterModal from "./CreateCharacterModal";
 // - 캐릭터 선택 UI (썸네일 표시)
 
 export default async function CharactersPage() {
-  const supabase = await createSupabaseServerClient();
-
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
-    redirect("/login");
-  }
-  const userId = data.user.id;
+  const user = await requireUser();
+  const userId = user.id;
   const characters = await getCharactersAction(userId);
 
   return (
     <div className="p-6">
+      {/* 추후 모달/폼으로 연결 */}
+      <div className="mt-6">
+        <CreateCharacterModal />
+      </div>
       <h1 className="mb-4 text-2xl font-bold">캐릭터 선택</h1>
       <div className="grid grid-cols-3 gap-6">
         {characters.map((c) => (
@@ -48,11 +46,6 @@ export default async function CharactersPage() {
             <h2 className="mt-4 text-center font-semibold">{c.name}</h2>
           </Link>
         ))}
-      </div>
-
-      {/* 추후 모달/폼으로 연결 */}
-      <div className="mt-6">
-        <CreateCharacterModal />
       </div>
     </div>
   );
