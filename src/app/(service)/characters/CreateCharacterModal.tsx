@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useEffect, useActionState, useCallback, useTransition } from "react";
+import React from "react";
+import {
+  useState,
+  useEffect,
+  useActionState,
+  useCallback,
+  useTransition,
+} from "react";
 import { createCharacterFromForm } from "./actions";
 import { createClient } from "@/utils/supabase/client";
 import Image from "next/image";
@@ -215,9 +222,10 @@ export default function CreateCharacterModal() {
   );
 }
 
-function ThumbnailPicker() {
+function ThumbnailPicker({ resetKey = 0 }: { resetKey?: number }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [pickerError, setPickerError] = useState<string | null>(null);
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   const MAX_SIZE = 5 * 1024 * 1024; // 5MB
   const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
@@ -226,6 +234,16 @@ function ThumbnailPicker() {
     const cached = sessionStorage.getItem("createCharacter.thumbnail.preview");
     if (cached) setPreviewUrl(cached);
   }, []);
+
+  useEffect(() => {
+    // Reset when parent requests
+    setPickerError(null);
+    setPreviewUrl(null);
+    try {
+      sessionStorage.removeItem("createCharacter.thumbnail.preview");
+    } catch {}
+    if (inputRef.current) inputRef.current.value = "";
+  }, [resetKey]);
 
   return (
     <div>
@@ -237,6 +255,7 @@ function ThumbnailPicker() {
         name="thumbnailFile"
         type="file"
         accept="image/*"
+        ref={inputRef}
         className="block w-full cursor-pointer rounded border bg-white file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
         onChange={(e) => {
           setPickerError(null);

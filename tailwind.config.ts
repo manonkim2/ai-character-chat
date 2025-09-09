@@ -19,17 +19,24 @@ export default {
         },
       },
       colors: {
-        fontPrimary: "#333333",
-        fontSecondary: "#58656F",
-        fontTertiary: "#b6b3b3",
-        bgPrimary: "#222222",
-        bgSecondary: "#414141",
+        // Text palette
+        fontPrimary: "hsl(var(--font-primary))",
+        fontSecondary: "hsl(var(--font-secondary))",
+        fontTertiary: "hsl(var(--font-tertiary))",
+
+        // Background palette
+        bgPrimary: "hsl(var(--bg-primary))",
+        bgSecondary: "hsl(var(--bg-secondary))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        // Brand
         brand: {
           DEFAULT: "hsl(var(--brand))",
           foreground: "hsl(var(--brand-foreground))",
         },
+        primary: "hsl(var(--brand))",
+        primaryForeground: "hsl(var(--brand-foreground))",
       },
       spacing: {
         xs: "4px",
