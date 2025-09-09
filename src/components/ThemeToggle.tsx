@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function ThemeToggle() {
+const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -43,6 +43,6 @@ export function ThemeToggle() {
       {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
     </button>
   );
-}
+};
 
 export default ThemeToggle;

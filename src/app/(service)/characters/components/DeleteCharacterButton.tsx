@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { deleteCharacterAction } from "../actions";
 import { CircleX, Delete, DeleteIcon } from "lucide-react";
 
-export default function DeleteCharacterButton({
+const DeleteCharacterButton = ({
   id,
   disabled,
 }: {
   id: string;
   disabled?: boolean;
-}) {
+}) => {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -43,9 +43,11 @@ export default function DeleteCharacterButton({
       }}
       disabled={isPending || disabled}
       title={disabled ? "기본 캐릭터는 삭제할 수 없어요" : "캐릭터 삭제"}
-      className="rounded text-xs disabled:opacity-30"
+      className="rounded text-xs disabled:opacity-30 dark:text-gray-300 text-gray-500"
     >
       {isPending ? "삭제 중..." : <CircleX />}
     </button>
   );
-}
+};
+
+export default DeleteCharacterButton;

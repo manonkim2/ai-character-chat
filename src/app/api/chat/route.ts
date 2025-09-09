@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     return new Response("200자 이하만 입력 가능", { status: 400 });
   }
 
-  const key = process.env.OPENAI_API_KEY;
+  const key = process.env.CLAUDE_API_KEY;
 
   // 키가 없으면 개발용 에코 스트림으로 응답 (프론트 흐름 검증용)
   if (!key) {

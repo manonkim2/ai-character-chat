@@ -7,7 +7,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function ChatPage({ params }: Props) {
+const ChatPage = async ({ params }: Props) => {
   const { id } = await params;
   const user = await requireUser();
   const info = await getCharacterInfo(user.id, id);
@@ -28,4 +28,6 @@ export default async function ChatPage({ params }: Props) {
       />
     </div>
   );
-}
+};
+
+export default ChatPage;

@@ -16,7 +16,7 @@ type FormState = { ok?: boolean; error?: string; id?: string } | undefined;
 
 import { useRouter } from "next/navigation";
 
-export default function CreateCharacterModal() {
+const CreateCharacterModal = () => {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -220,7 +220,7 @@ export default function CreateCharacterModal() {
       )}
     </>
   );
-}
+};
 
 function ThumbnailPicker({ resetKey = 0 }: { resetKey?: number }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -333,3 +333,5 @@ function ThumbnailPicker({ resetKey = 0 }: { resetKey?: number }) {
     </div>
   );
 }
+
+export default CreateCharacterModal;
