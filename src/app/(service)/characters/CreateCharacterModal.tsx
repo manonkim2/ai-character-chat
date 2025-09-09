@@ -102,24 +102,7 @@ export default function CreateCharacterModal() {
                 />
               </div>
 
-              <div>
-                <label
-                  htmlFor="thumbnail"
-                  className="mb-1 block text-sm font-medium"
-                >
-                  썸네일 이미지 URL (선택)
-                </label>
-                <input
-                  id="thumbnail"
-                  name="thumbnail"
-                  type="url"
-                  placeholder="https://..."
-                  className="w-full rounded border px-3 py-2 outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  파일 업로드는 추후 연결 예정입니다.
-                </p>
-              </div>
+              <ThumbnailPicker />
 
               <div className="flex justify-end gap-2 pt-2">
                 <button
@@ -141,5 +124,51 @@ export default function CreateCharacterModal() {
         </div>
       )}
     </>
+  );
+}
+
+function ThumbnailPicker() {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  return (
+    <div>
+      <label htmlFor="thumbnailFile" className="mb-1 block text-sm font-medium">
+        썸네일 이미지 (선택)
+      </label>
+      <input
+        id="thumbnailFile"
+        name="thumbnailFile"
+        type="file"
+        accept="image/*"
+        className="block w-full cursor-pointer rounded border bg-white file:mr-4 file:rounded file:border-0 file:bg-gray-100 file:px-3 file:py-2 file:text-sm file:font-medium hover:file:bg-gray-200"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            const url = URL.createObjectURL(file);
+            setPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return url;
+            });
+          } else {
+            setPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return null;
+            });
+          }
+        }}
+      />
+      {previewUrl && (
+        <div className="mt-3">
+          <img
+            src={previewUrl}
+            alt="썸네일 미리보기"
+            className="h-24 w-24 rounded-full object-cover ring-1 ring-gray-200"
+          />
+        </div>
+      )}
+      <p className="mt-1 text-xs text-gray-500">
+        JPG/PNG 등 이미지 파일을 선택하세요.
+      </p>
+    </div>
   );
 }

@@ -48,8 +48,8 @@ export const createCharacterFromForm = async (
   const userId = data.user.id;
   const name = String(formData.get("name") || "").trim();
   const prompt = String(formData.get("prompt") || "").trim();
-  const thumbnailRaw = formData.get("thumbnail");
-  const thumbnail = thumbnailRaw ? String(thumbnailRaw).trim() : undefined;
+  const file = formData.get("thumbnailFile");
+  let thumbnail: string | undefined = undefined;
 
   if (!name) {
     return { ok: false, error: "이름을 입력해주세요." } as const;
@@ -59,6 +59,40 @@ export const createCharacterFromForm = async (
   }
 
   try {
+    // 파일 업로드 처리
+    if (file && typeof file !== "string") {
+      const f = file as File;
+      if (f.size > 0) {
+        const bucket = "thumbnails";
+        const ext = f.name?.split(".").pop() || "png";
+        const objectPath = `${userId}/${crypto.randomUUID()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage
+          .from(bucket)
+          .upload(objectPath, f, {
+            contentType: f.type || "image/png",
+            upsert: false,
+          });
+
+        if (uploadErr) {
+          return {
+            ok: false,
+            error: `썸네일 업로드 실패: ${uploadErr.message}`,
+          } as const;
+        }
+
+        const { data: pub, error: pubErr } = supabase.storage
+          .from(bucket)
+          .getPublicUrl(objectPath);
+        if (pubErr || !pub?.publicUrl) {
+          return {
+            ok: false,
+            error: "썸네일 URL 생성에 실패했습니다.",
+          } as const;
+        }
+        thumbnail = pub.publicUrl;
+      }
+    }
+
     const created = await db.character.create({
       data: { userId, name, prompt, thumbnail },
     });
