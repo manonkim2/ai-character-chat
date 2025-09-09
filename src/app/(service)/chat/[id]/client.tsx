@@ -10,6 +10,10 @@ type Msg = {
   content: string;
   ts: number;
   characterId: string;
+  /** 전송 실패 여부 (useChat 훅에서 설정) */
+  failed?: boolean;
+  /** 선택: 실패 사유(있을 때만 툴팁으로 노출) */
+  failedReason?: string;
 };
 
 const MAX_LEN = 200;
@@ -38,17 +42,41 @@ const MessageBubble = ({
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[78%] rounded-2xl border border-white/10 px-3 py-2 text-sm shadow-sm ${
+        className={`max-w-[78%] rounded-2xl border px-3 py-2 text-sm shadow-sm ${
           isUser
-            ? "bg-primary text-primaryForeground"
-            : "bg-white text-fontPrimary dark:bg-bgPrimary"
+            ? `${
+                msg.failed
+                  ? "border-red-400/70 bg-primary/90"
+                  : "border-white/10 bg-primary"
+              } text-primaryForeground`
+            : "border-white/10 bg-white text-fontPrimary dark:bg-bgPrimary"
         }`}
       >
         <div className="whitespace-pre-wrap break-words">{msg.content}</div>
         <div className="mt-1 text-[10px] opacity-70">
           {new Date(msg.ts).toLocaleTimeString()}
         </div>
-        {isUser && isLastUser && (
+        {isUser && msg.failed && (
+          <div className="mt-1 flex items-center justify-end gap-2 text-[11px]">
+            <span
+              className="text-red-500/90"
+              title={msg.failedReason || "전송 실패"}
+            >
+              전송 실패
+            </span>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onResend}
+              className="rounded border border-red-300 bg-red-50 px-2 py-0.5 text-[10px] text-red-700 hover:bg-red-100 disabled:opacity-50"
+              title="실패한 메시지 다시 보내기"
+              aria-label="실패한 메시지 다시 보내기"
+            >
+              다시 보내기
+            </button>
+          </div>
+        )}
+        {isUser && !msg.failed && isLastUser && (
           <div className="mt-1 text-right">
             <button
               type="button"
@@ -56,6 +84,7 @@ const MessageBubble = ({
               onClick={onResend}
               className="rounded border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] hover:bg-white/20 disabled:opacity-50"
               title="이 메시지로 다시 응답 받기"
+              aria-label="이 메시지로 다시 응답 받기"
             >
               재전송
             </button>
@@ -77,7 +106,7 @@ const ChatClient = ({
   title?: string | null;
   initialMessages?: Msg[];
 }) => {
-  const { messages, send, loading, abort, resendLast } = useChat(
+  const { messages, send, loading, abort, resendLast, resendAtIndex } = useChat(
     characterId,
     systemPrompt || undefined,
     initialMessages
@@ -88,6 +117,10 @@ const ChatClient = ({
   const [exiting, setExiting] = useState(false);
 
   const lastUserIdx = useLastUserIndex(messages);
+  const hasFailed = useMemo(
+    () => messages.some((m) => m.role === "user" && m.failed),
+    [messages]
+  );
 
   const scrollToBottom = useCallback(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -158,6 +191,16 @@ const ChatClient = ({
           </button>
         </div>
       </header>
+      {hasFailed && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-4 mt-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700"
+        >
+          전송 실패한 메시지가 있습니다. 각 메시지의 ‘다시 보내기’를 눌러
+          재시도하세요.
+        </div>
+      )}
 
       <div ref={listRef} className="flex-1 space-y-2.5 overflow-auto px-4 py-3">
         {messages.map((m, idx) => (
@@ -166,7 +209,7 @@ const ChatClient = ({
             msg={m}
             isLastUser={idx === lastUserIdx}
             loading={loading}
-            onResend={resendLast}
+            onResend={() => resendAtIndex(idx)}
           />
         ))}
         {loading && (
