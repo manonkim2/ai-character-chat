@@ -123,3 +123,63 @@ export const getCharactersAction = async (userId: string) => {
   });
   return [...defaultCharacters(userId), ...custom];
 };
+
+// 기본 캐릭터 매핑 헬퍼 및 저장용 ID 가공
+const getDefaultById = (userId: string, id: string) =>
+  defaultCharacters(userId).find((c) => c.id === id);
+
+const storageIdFor = (userId: string, characterId: string) =>
+  characterId.startsWith("default-") ? `${userId}::${characterId}` : characterId;
+
+// 메시지 조회 (기본 캐릭터는 유저별 가상 ID로 매핑)
+export const getMessagesAction = async (userId: string, characterId: string) => {
+  const storageId = storageIdFor(userId, characterId);
+  return db.message.findMany({
+    where: { userId, characterId: storageId },
+    orderBy: { createdAt: "asc" },
+  });
+};
+
+// 대화 저장: 기존 내역 덮어쓰기 (기본 캐릭터도 저장 가능)
+export const saveConversationAction = async (
+  characterId: string,
+  messages: { role: "user" | "assistant"; content: string; ts?: number }[]
+) => {
+  const user = await requireUser();
+  const userId = user.id;
+
+  const storageId = storageIdFor(userId, characterId);
+
+  // 기본 캐릭터인 경우 FK 만족을 위해 사용자별 가상 캐릭터 upsert
+  if (characterId.startsWith("default-")) {
+    const def = getDefaultById(userId, characterId);
+    if (def) {
+      await db.character.upsert({
+        where: { id: storageId },
+        create: {
+          id: storageId,
+          userId,
+          name: def.name,
+          prompt: def.prompt,
+          thumbnail: def.thumbnail,
+        },
+        update: {},
+      });
+    }
+  }
+
+  await db.$transaction([
+    db.message.deleteMany({ where: { userId, characterId: storageId } }),
+    db.message.createMany({
+      data: messages.map((m) => ({
+        userId,
+        characterId: storageId,
+        role: m.role,
+        content: m.content,
+        createdAt: m.ts ? new Date(m.ts) : new Date(),
+      })),
+    }),
+  ]);
+
+  return { ok: true as const, count: messages.length };
+};

@@ -2,11 +2,36 @@
 
 import { useChat } from "@/hooks/useChat";
 import { useEffect, useRef, useState } from "react";
+import { saveConversationAction } from "@/app/(service)/characters/actions";
+import { useRouter } from "next/navigation";
 
-export default function ChatClient({ characterId, systemPrompt }: { characterId: string; systemPrompt?: string | null }) {
-  const { messages, send, loading, abort } = useChat(characterId, systemPrompt || undefined);
+type Msg = {
+  role: "user" | "assistant";
+  content: string;
+  ts: number;
+  characterId: string;
+};
+
+export default function ChatClient({
+  characterId,
+  systemPrompt,
+  title,
+  initialMessages = [],
+}: {
+  characterId: string;
+  systemPrompt?: string | null;
+  title?: string | null;
+  initialMessages?: Msg[];
+}) {
+  const { messages, send, loading, abort } = useChat(
+    characterId,
+    systemPrompt || undefined,
+    initialMessages
+  );
   const [text, setText] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
+  const router = useRouter();
+  const [exiting, setExiting] = useState(false);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -14,6 +39,32 @@ export default function ChatClient({ characterId, systemPrompt }: { characterId:
 
   return (
     <div className="flex h-full flex-col rounded-lg border bg-bgSecondary p-3">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-sm text-fontSecondary">
+          {title || `캐릭터 ID: ${characterId}`}
+        </div>
+        <button
+          type="button"
+          disabled={exiting}
+          onClick={async () => {
+            try {
+              setExiting(true);
+              const toSave = messages.map(({ role, content, ts }) => ({
+                role,
+                content,
+                ts,
+              }));
+              await saveConversationAction(characterId, toSave);
+              router.push("/characters");
+            } finally {
+              setExiting(false);
+            }
+          }}
+          className="rounded-md border px-3 py-1.5 text-sm hover:bg-white/50 disabled:opacity-50 dark:hover:bg-bgPrimary/60"
+        >
+          {exiting ? "저장 중..." : "대화 저장 후 채팅창 나가기"}
+        </button>
+      </div>
       <div ref={listRef} className="flex-1 space-y-3 overflow-auto pr-1">
         {messages.map((m, idx) => (
           <div

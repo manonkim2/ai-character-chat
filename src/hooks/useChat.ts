@@ -7,8 +7,12 @@ type Msg = {
   characterId: string;
 };
 
-export function useChat(characterId: string, systemPrompt?: string) {
-  const [messages, setMessages] = useState<Msg[]>([]);
+export function useChat(
+  characterId: string,
+  systemPrompt?: string,
+  initialMessages: Msg[] = []
+) {
+  const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [loading, setLoading] = useState(false);
   const controllerRef = useRef<AbortController | null>(null);
 
