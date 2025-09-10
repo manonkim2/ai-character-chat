@@ -1,5 +1,5 @@
 import ChatClient from "./client";
-import { requireUser } from "@/utils/auth/server";
+import { requireUser } from "@/utils/require-user";
 import { getCharacterInfo } from "@/utils/characters";
 import { getMessagesAction } from "@/app/(service)/characters/actions";
 

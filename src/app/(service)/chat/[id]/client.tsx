@@ -1,6 +1,6 @@
 "use client";
 
-import { useChat } from "@/hooks/useChat";
+import { useChat } from "@/lib/useChat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { saveConversationAction } from "@/app/(service)/characters/actions";
 import { useRouter } from "next/navigation";

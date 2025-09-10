@@ -22,13 +22,14 @@ yarn install
 
 ### 3. 환경 변수 설정
 
-프로젝트 루트에 `.env` 파일을 생성하고 아래 항목을 채워주세요.  
-`.env.example` 파일을 참고하세요.
+`.env.example` 파일을 참고하여 프로젝트 루트에 `.env` 파일을 생성해주세요.
 
-### 4. Prisma 초기화
+### 4. Prisma
 
 ```bash
-npx prisma migrate dev
+
+#  Prisma Client 코드 재생성
+yarn pnpify prisma generate
 ```
 
 ### 5. 로컬 실행
@@ -81,7 +82,7 @@ yarn run dev
 ## 🛠️ 기술 스택
 
 - **프론트엔드**: Next.js (App Router), TypeScript, TailwindCSS
-- **백엔드**: Supabase (Postgres), Prisma ORM
+- **백엔드**: Supabase, Prisma ORM
 - **AI API**: Anthropic Claude Messages API
 - **인증**: Supabase Auth
 

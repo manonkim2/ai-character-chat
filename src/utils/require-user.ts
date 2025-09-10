@@ -7,10 +7,3 @@ export async function requireUser() {
   if (!data?.user) redirect("/login");
   return data.user;
 }
-
-export async function getUserOptional() {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  return data?.user ?? null;
-}
-

@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import Image from "next/image";
 import Link from "next/link";
 
-import { requireUser } from "@/utils/auth/server";
+import { requireUser } from "@/utils/require-user";
 import { getCharactersAction } from "./actions";
 import CreateCharacterModal from "./components/CreateCharacterModal";
 import DeleteCharacterButton from "./components/DeleteCharacterButton";

@@ -2,7 +2,7 @@
 
 import db from "@/lib/db";
 import { createSupabaseServerClient } from "@/utils/supabase/server";
-import { requireUser } from "@/utils/auth/server";
+import { requireUser } from "@/utils/require-user";
 
 // 기본 캐릭터
 const defaultCharacters = (userId: string) => [
@@ -133,10 +133,15 @@ const getDefaultById = (userId: string, id: string) =>
   defaultCharacters(userId).find((c) => c.id === id);
 
 const storageIdFor = (userId: string, characterId: string) =>
-  characterId.startsWith("default-") ? `${userId}::${characterId}` : characterId;
+  characterId.startsWith("default-")
+    ? `${userId}::${characterId}`
+    : characterId;
 
 // 메시지 조회 (기본 캐릭터는 유저별 가상 ID로 매핑)
-export const getMessagesAction = async (userId: string, characterId: string) => {
+export const getMessagesAction = async (
+  userId: string,
+  characterId: string
+) => {
   const storageId = storageIdFor(userId, characterId);
   return db.message.findMany({
     where: { userId, characterId: storageId },
@@ -196,7 +201,11 @@ export const deleteCharacterAction = async (id: string) => {
   const isDefault = id.startsWith("default-");
   if (isDefault) {
     // 기본 캐릭터는 삭제 불가
-    return { ok: false as const, deleted: false, error: "기본 캐릭터는 삭제할 수 없습니다." };
+    return {
+      ok: false as const,
+      deleted: false,
+      error: "기본 캐릭터는 삭제할 수 없습니다.",
+    };
   }
   const storageId = storageIdFor(userId, id);
 
